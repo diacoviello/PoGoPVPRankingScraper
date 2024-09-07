@@ -1,38 +1,51 @@
-import discord
-from twilio.rest import Client
-from keys import token, account_sid, auth_token, twilio_phone_number, your_phone_number
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+import pandas as pd
+import os
+import time
 
-client_twilio = Client(account_sid, auth_token)
+# Set up Chrome options
+chrome_options = Options()
+chrome_options.add_argument("--headless")  # Run in headless mode
+chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
+chrome_options.add_argument("--no-sandbox")  # Disable sandboxing for headless mode
 
-# Discord bot setup
-intents = discord.Intents.default()
-intents.messages = True
-client_discord = discord.Client(intents=intents)
+# Initialize WebDriver
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
-# The Discord user ID whose messages you want to forward
-target_user_id = 820536703068274688  # Replace with actual user ID
+# Example URL
+url = 'https://pvpoke.com/rankings/all/2500/overall/'
 
+# Navigate to the URL
+driver.get(url)
 
-@client_discord.event
-async def on_ready():
-    print(f'Bot is logged in as {client_discord.user}')
+# Find the download button
+download_button = driver.find_element("css selector", 'a.button.download-csv')
 
+# Click the download button
+download_button.click()
 
-@client_discord.event
-async def on_message(message):
-    # Check if the message is a DM from the target user
-    if isinstance(message.channel, discord.DMChannel) and message.author.id == target_user_id:
-        print(f"Received DM from {message.author}: {message.content}")
+# Wait for the file to download
+time.sleep(10)  # Adjust the sleep time as needed based on your connection speed
 
-        # Send the message content via SMS
-        message_body = f"Discord DM from {message.author}: {message.content}"
-        client_twilio.messages.create(
-            body=message_body,
-            from_=twilio_phone_number,
-            to=your_phone_number
-        )
-        print(f"Message sent to {your_phone_number}")
+# Assuming the file is downloaded to the default download directory
+download_directory = os.path.join(os.path.expanduser("~"), "Downloads")
+csv_filename = 'cp2500_all_overall_rankings.csv'
+csv_file_path = os.path.join(download_directory, csv_filename)
 
+# Check if file exists and read it
+if os.path.exists(csv_file_path):
+    print("CSV file downloaded successfully.")
+    # Read and process the CSV file
+    df = pd.read_csv(csv_file_path)
+    print(df.head())
+    # Example: Print specific columns from each row
+    for index, row in df.iterrows():
+        print(f"Column1: {row['Column1']}, Column2: {row['Column2']}")
+else:
+    print("Failed to download the CSV file.")
 
-# Replace with your bot token
-client_discord.run(token)
+# Close the WebDriver
+driver.quit()

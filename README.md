@@ -1,1 +1,1 @@
-# HoppipNotify
+# PoGoPVPRankingScraper
