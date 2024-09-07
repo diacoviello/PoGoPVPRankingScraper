@@ -5,7 +5,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 import os
 import time
-
+#
 # Set up Chrome options
 chrome_options = Options()
 chrome_options.add_argument("--headless")  # Run in headless mode
